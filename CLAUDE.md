@@ -117,6 +117,10 @@ processes and is out of scope for a unit harness.
 
 - Commit subjects: imperative mood.
 - Commit + push to `origin/main` when the user asks; confirm before force-pushing.
+- **Releases:** add a `CHANGELOG.md` entry (Keep a Changelog), then tag `vX.Y.Z`
+  and cut a matching GitHub release (`gh release create`). The Osiris
+  `amendale.shutdown` plugin fetches `core/`+`ui/` from **`main`** (not a tag),
+  so a release here reaches installed desktops on the next `install.sh` run.
 - **Keep this `CLAUDE.md` current with every change** (standing user rule for all
   projects). When the architecture, build/install steps, or a gotcha change,
   update this file in the same commit. Keep the README in sync too.
