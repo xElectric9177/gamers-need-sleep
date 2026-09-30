@@ -1,17 +1,31 @@
 #!/bin/bash
 # Launcher for the standalone Gamers Need Sleep app. Runs the shared Quickshell
-# config. Installed to /usr/bin; the QML lives in /usr/share/gamers-need-sleep.
+# bundle (shell.qml beside its ui/ and core/). Finds the bundle in the usual
+# install locations, or a local dev build.
 set -euo pipefail
 
-SHARE_DIR="${GNS_SHARE_DIR:-/usr/share/gamers-need-sleep}"
-CONFIG="$SHARE_DIR/app/shell.qml"
+candidates=()
+[[ -n "${GNS_SHARE_DIR:-}" ]] && candidates+=("$GNS_SHARE_DIR/app/shell.qml")
+candidates+=(
+  "$HOME/.local/share/gamers-need-sleep/app/shell.qml"
+  "/usr/local/share/gamers-need-sleep/app/shell.qml"
+  "/usr/share/gamers-need-sleep/app/shell.qml"
+)
+# Dev fallbacks when run from a checkout (build/app or a repo-root assembly).
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+candidates+=(
+  "$HERE/../build/app/shell.qml"
+  "$HERE/../app/shell.qml"
+)
 
-# Fall back to a dev build when run from a checkout (build/app/shell.qml).
-if [[ ! -f "$CONFIG" ]]; then
-  HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  for cand in "$HERE/../build/app/shell.qml" "$HERE/../app/shell.qml"; do
-    if [[ -f "$cand" ]]; then CONFIG="$cand"; break; fi
-  done
+CONFIG=""
+for c in "${candidates[@]}"; do
+  if [[ -f "$c" ]]; then CONFIG="$c"; break; fi
+done
+
+if [[ -z "$CONFIG" ]]; then
+  echo "gamers-need-sleep: could not find shell.qml. Run ./install.sh (or ./install.sh --dev)." >&2
+  exit 1
 fi
 
 if ! command -v qs >/dev/null 2>&1; then

@@ -4,12 +4,7 @@ A shutdown / sleep timer for Arch Linux, built in [Quickshell](https://quickshel
 Set your PC to **power off, restart, suspend, or hibernate** either after a countdown or at a
 specific time of day — and go to bed.
 
-It ships two ways from one codebase:
-
-- **Standalone app** — a normal desktop window, for any Arch user. Themed in a *Midnight Neon
-  Lo-Fi* look.
-- **Omarchy bar widget** — a drop-down in your [Omarchy](https://omarchy.org) bar that inherits
-  your live theme.
+A standalone desktop app with a *Midnight Neon Lo-Fi* look.
 
 > **"At a specific time" means your PC's local wall-clock time.** If you set **23:00** while your
 > machine is on BST, it fires at **23:00 BST** — never 23:00 UTC. This is guaranteed by scheduling
@@ -44,28 +39,22 @@ systemd-run --user --collect --unit=gamers-need-sleep --on-calendar=<local>  sys
 
 ## Install
 
-### From the AUR
+Requires `quickshell` (in the `extra` repo). Optional: `libnotify` (notifications) and
+`wl-clipboard` (copy the command).
 
 ```
-yay -S gamers-need-sleep      # or: paru -S gamers-need-sleep
-```
-
-### Manual / from source
-
-```
-git clone https://github.com/amendale/gamers-need-sleep
+git clone https://github.com/xElectric9177/gamers-need-sleep
 cd gamers-need-sleep
-./scripts/build.sh                 # assembles build/app and build/plugin
-qs -p build/app/shell.qml          # run the standalone app
+./install.sh            # per-user install into ~/.local (no root)
 ```
 
-Requires `quickshell` and `systemd`; optional `libnotify` (notifications) and `wl-clipboard` (copy).
+Then launch **Gamers Need Sleep** from your app menu, or run `gamers-need-sleep` (ensure
+`~/.local/bin` is on your `PATH`).
 
-## Usage
-
-### Standalone
-
-Launch **Gamers Need Sleep** from your app launcher, or run `gamers-need-sleep`.
+- `./install.sh --system` installs into `/usr/local` (uses `sudo`).
+- `./install.sh --uninstall` removes it.
+- `./install.sh --dev` just assembles `build/app/` so you can run `qs -p build/app/shell.qml`
+  without installing.
 
 Hyprland tiles new windows; if you'd rather it float, add a rule:
 
@@ -76,14 +65,10 @@ windowrulev2 = size 400 720, title:^(Gamers Need Sleep)$
 
 ### Omarchy bar widget
 
-```
-gamers-need-sleep-install-omarchy-plugin
-```
-
-Then add `"amendale.shutdown"` to a section of your bar layout in `~/.config/omarchy/shell.json`,
-e.g. `"bar": { "layout": { "right": [ "amendale.shutdown", ... ] } }`, and reload the shell. The
-bar button shows the remaining time while a timer is armed, and turns its active colour in the last
-5 minutes.
+This repo is the standalone app and the shared engine. The **Omarchy bar drop-down** version of
+the timer lives in the [Osiris](https://github.com/xElectric9177/Osiris) config project as the
+`amendale.shutdown` plugin, which reuses this repo's `core/` and `ui/` (fetched from here). If you
+run Omarchy and want the bar pill, install it from there.
 
 ## Limitations
 
@@ -95,15 +80,14 @@ bar button shows the remaining time while a timer is armed, and turns its active
 ```
 core/       scheduler engine + command builder + formatting (frontend-agnostic)
 ui/         theme-agnostic Quickshell components + the Midnight Neon Lo-Fi theme
-standalone/ standalone app entry, launcher, .desktop
-omarchy/    bar-widget manifest + BarWidget + OmarchyTheme adapter
-scripts/    build.sh (assemble bundles), install-omarchy-plugin.sh
-packaging/  PKGBUILD
+standalone/ standalone app entry (shell.qml), launcher, .desktop
+install.sh  assemble + install the standalone bundle (see --help)
 ```
 
-The UI components read colours/fonts from an injected `theme` object, so the same `ui/` and `core/`
-render in the neon standalone app and in the Omarchy plugin (where `OmarchyTheme` binds the contract
-to the live Omarchy palette).
+The UI components read colours/fonts from an injected `theme` object, so the same `core/` and `ui/`
+render in this neon standalone app and in the Omarchy plugin (where an `OmarchyTheme` adapter — kept
+in the Osiris repo — binds the contract to the live Omarchy palette). See `CLAUDE.md` for the full
+architecture and dev notes.
 
 ## License
 
