@@ -13,6 +13,10 @@ import QtQuick
 QtObject {
   id: root
 
+  // Local-time helper, so the warn timer for a specific-time schedule can be
+  // expressed on the same wall-clock (OnCalendar) basis as the action.
+  readonly property Formatting fmt: Formatting {}
+
   // Stable unit names so status/abort are trivial and only one schedule exists.
   readonly property string unit: "gamers-need-sleep"
   readonly property string warnUnit: "gamers-need-sleep-warn"
@@ -71,6 +75,13 @@ QtObject {
 
   // Optional pre-execution desktop warning, fired ~`lead` seconds before the
   // action. Only scheduled when notify is on and there is room before the run.
+  //
+  // The warn must share the action's time basis, or the two drift across a
+  // suspend: a countdown action is monotonic (--on-active), so its warn is too;
+  // a specific-time action is wall-clock (--on-calendar), so its warn is a
+  // calendar target `lead` seconds before the run — otherwise a machine that
+  // sleeps between arm and fire would resume its monotonic warn timer late (or
+  // early) relative to the calendar action.
   function warnArgv(spec, action, opts, leadSeconds) {
     var body = "The system will " + actionVerb(action) + " in " + Math.round(leadSeconds / 60) + " min."
     var notify = ["notify-send", "-u", "critical", "-a", "Gamers Need Sleep",
@@ -80,7 +91,8 @@ QtObject {
     if (spec.kind === "countdown") {
       argv.push("--on-active=" + Math.max(1, spec.seconds - leadSeconds) + "s")
     } else {
-      argv.push("--on-active=" + Math.max(1, spec.secondsUntil - leadSeconds) + "s")
+      var warnDate = new Date(spec.targetEpochMs - leadSeconds * 1000)
+      argv.push("--on-calendar=" + fmt.onCalendar(warnDate))
     }
     return argv.concat(notify)
   }

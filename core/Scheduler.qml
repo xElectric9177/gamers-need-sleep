@@ -77,12 +77,18 @@ Item {
     root.active = true
     root.activeAction = root._action
     root.activeMode = root._spec.kind
-    root.targetEpochMs = root._spec.targetEpochMs
+    // A countdown's --on-active timer starts counting from now (after the async
+    // stop -> reset -> run chain), not from click time, so anchor the displayed
+    // target to now + seconds. A specific-time schedule is an absolute wall-clock
+    // moment, so its target is fixed regardless of chain latency.
+    root.targetEpochMs = root._spec.kind === "countdown"
+      ? Date.now() + root._spec.seconds * 1000
+      : root._spec.targetEpochMs
     root.activeCreatedMs = Date.now()
     root.nowMs = Date.now()
     _writeState()
 
-    var secondsUntil = (root._spec.targetEpochMs - Date.now()) / 1000
+    var secondsUntil = (root.targetEpochMs - Date.now()) / 1000
     if (root._opts.notify && secondsUntil > root.warnLead + 15) {
       warnProc.command = cb.warnArgv(root._spec, root._action, root._opts, root.warnLead)
       warnProc.running = true

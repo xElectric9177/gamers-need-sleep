@@ -71,6 +71,25 @@ runs from the source tree directly; it must be assembled into a bundle first.
   `GNS_SHARE_DIR` pinned to its share dir.
 - `build/` is git-ignored.
 
+## Tests
+
+`tests/` unit-tests the **pure** helpers — `Formatting` (duration/clock/
+onCalendar/tzAbbrev/timeOfDay) and `CommandBuilder` (argv + preview builders,
+including the timezone-correct specific-time warn). `Scheduler` drives systemd/
+processes and is out of scope for a unit harness.
+
+- **Run:** `./tests/run.sh` → prints `PASS n/n` (exit 0) or lists `FAIL` lines
+  (exit 1). It assembles `core/` into `build/test/` beside `harness.qml` and runs
+  it with `qs`.
+- **Why `qs`, not `qmltestrunner`:** on this box (Arch, Qt 6.11.2) qmltestrunner
+  exits 1 with no output for *any* input — even a trivial one-test file — so
+  QuickTest is unusable here. The harness (`tests/harness.qml`) is a headless
+  `ShellRoot` that runs the assertions in Quickshell (the app's own runtime),
+  prints a `[[GNS-TESTS]]` sentinel, and `Qt.exit`s with the status.
+- These lock the hard requirement: `onCalendar`/`timeOfDay` build Dates from
+  local components and assert the same components back, so they'd catch any
+  UTC-conversion regression regardless of the host timezone.
+
 ## Gotchas (learned the hard way)
 
 - A QML property named `on<Capital>` is parsed as a signal handler — the "text
@@ -85,6 +104,14 @@ runs from the source tree directly; it must be assembled into a bundle first.
 - Status parse only reads `ActiveState` — `systemctl show --value` formats the
   next-elapse as a localized date string, so the exact target comes from the
   persisted state file, not systemd.
+- The pre-warning timer must share the **action's time basis**: a countdown
+  action is monotonic (`--on-active`) so its warn is too; a specific-time action
+  is wall-clock (`--on-calendar`) so its warn is a calendar target `lead` seconds
+  before the run. Mixing them lets the warn drift from the action across a
+  suspend. (`CommandBuilder.warnArgv`.)
+- The displayed countdown target is anchored at arm-*confirmed* time
+  (`Scheduler._onArmed`), not click time — the async stop→reset→run chain adds
+  latency, and `--on-active` counts from when the timer actually starts.
 
 ## Git / commit workflow
 
@@ -95,3 +122,5 @@ runs from the source tree directly; it must be assembled into a bundle first.
   update this file in the same commit. Keep the README in sync too.
 - When `core/`/`ui/` change in a way the Omarchy plugin depends on, note it — the
   Osiris `amendale.shutdown` plugin fetches these from here and must be re-synced.
+  **Pending re-sync:** `core/CommandBuilder.qml` (calendar-based specific-time
+  warn) and `core/Scheduler.qml` (arm-confirmed countdown target) changed.

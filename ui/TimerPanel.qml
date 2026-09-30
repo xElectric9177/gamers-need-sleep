@@ -52,8 +52,6 @@ Item {
   property int specMinute: 0
   property int dayOffset: 0            // 0 = today, 1 = tomorrow
 
-  readonly property bool hibernateAvailable: true   // refined by hasSwap probe below
-
   // Target Date for the specific-time mode, in local time. Auto-rolls to
   // tomorrow if "Today" + the picked time has already passed.
   function specificDate() {
@@ -96,7 +94,12 @@ Item {
     // /proc/swaps reports size 0 to stat, so `test -s` is wrong here — count
     // data lines instead (header + at least one swap device).
     command: ["bash", "-lc", "[ \"$(wc -l < /proc/swaps)\" -gt 1 ]"]
-    onExited: function (code) { panel._hasSwap = (code === 0) }
+    onExited: function (code) {
+      panel._hasSwap = (code === 0)
+      // If hibernate was selected but swap turns out to be unavailable, fall
+      // back so we never arm a hibernate that would just fail at fire time.
+      if (!panel._hasSwap && panel.action === "hibernate") panel.action = "poweroff"
+    }
   }
   Component.onCompleted: swapProc.running = true
 
