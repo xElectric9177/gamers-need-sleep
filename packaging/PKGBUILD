@@ -1,0 +1,45 @@
+# Maintainer: amendale
+pkgname=gamers-need-sleep
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Shutdown / sleep timer for Arch (Quickshell) — standalone app + Omarchy bar widget"
+arch=('any')
+url="https://github.com/amendale/gamers-need-sleep"
+license=('MIT')
+depends=('quickshell' 'systemd')
+optdepends=('libnotify: desktop notifications on arm and before firing'
+            'wl-clipboard: copy the scheduled command'
+            'omarchy: use as a bar drop-down widget')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+
+  local share="$pkgdir/usr/share/$pkgname"
+
+  # Standalone app bundle (entry + shared ui/core, side by side so Quickshell's
+  # in-config-folder import rule is satisfied).
+  install -d "$share/app"
+  install -m644 standalone/shell.qml "$share/app/shell.qml"
+  cp -r ui   "$share/app/ui"
+  cp -r core "$share/app/core"
+
+  # Omarchy plugin bundle (manifest + widget + adapter + shared ui/core).
+  install -d "$share/omarchy-plugin"
+  install -m644 omarchy/manifest.json    "$share/omarchy-plugin/manifest.json"
+  install -m644 omarchy/BarWidget.qml    "$share/omarchy-plugin/BarWidget.qml"
+  install -m644 omarchy/OmarchyTheme.qml "$share/omarchy-plugin/OmarchyTheme.qml"
+  cp -r ui   "$share/omarchy-plugin/ui"
+  cp -r core "$share/omarchy-plugin/core"
+
+  # Launcher + desktop entry + Omarchy install helper.
+  install -Dm755 standalone/gamers-need-sleep "$pkgdir/usr/bin/gamers-need-sleep"
+  install -Dm644 standalone/gamers-need-sleep.desktop \
+    "$pkgdir/usr/share/applications/gamers-need-sleep.desktop"
+  install -Dm755 scripts/install-omarchy-plugin.sh \
+    "$pkgdir/usr/bin/gamers-need-sleep-install-omarchy-plugin"
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 README.md "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

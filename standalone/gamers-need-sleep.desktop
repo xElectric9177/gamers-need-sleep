@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Gamers Need Sleep
+GenericName=Shutdown & Sleep Timer
+Comment=Schedule a shutdown, restart, suspend or hibernate after a delay or at a set local time
+Exec=gamers-need-sleep
+Icon=gamers-need-sleep
+Terminal=false
+Categories=Utility;System;
+Keywords=shutdown;sleep;suspend;hibernate;timer;power;
+StartupNotify=true

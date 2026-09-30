@@ -1,0 +1,22 @@
+#!/bin/bash
+# Launcher for the standalone Gamers Need Sleep app. Runs the shared Quickshell
+# config. Installed to /usr/bin; the QML lives in /usr/share/gamers-need-sleep.
+set -euo pipefail
+
+SHARE_DIR="${GNS_SHARE_DIR:-/usr/share/gamers-need-sleep}"
+CONFIG="$SHARE_DIR/app/shell.qml"
+
+# Fall back to a dev build when run from a checkout (build/app/shell.qml).
+if [[ ! -f "$CONFIG" ]]; then
+  HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  for cand in "$HERE/../build/app/shell.qml" "$HERE/../app/shell.qml"; do
+    if [[ -f "$cand" ]]; then CONFIG="$cand"; break; fi
+  done
+fi
+
+if ! command -v qs >/dev/null 2>&1; then
+  echo "gamers-need-sleep: quickshell (qs) is not installed." >&2
+  exit 1
+fi
+
+exec qs -p "$CONFIG" "$@"
